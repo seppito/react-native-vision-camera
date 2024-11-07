@@ -10,7 +10,7 @@ import { Camera } from 'react-native-vision-camera'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { StyleSheet } from 'react-native'
 import { DevicesPage } from './DevicesPage'
-
+import { OpenGLPage } from './OpenGLPage'
 const Stack = createNativeStackNavigator<Routes>()
 
 export function App(): React.ReactElement | null {
@@ -29,10 +29,12 @@ export function App(): React.ReactElement | null {
             statusBarStyle: 'dark',
             animationTypeForReplace: 'push',
           }}
-          initialRouteName={showPermissionsPage ? 'PermissionsPage' : 'CameraPage'}>
+          initialRouteName={showPermissionsPage ? 'PermissionsPage' : 'OpenGLPage'}>
           <Stack.Screen name="PermissionsPage" component={PermissionsPage} />
           <Stack.Screen name="CameraPage" component={CameraPage} />
           <Stack.Screen name="CodeScannerPage" component={CodeScannerPage} />
+          <Stack.Screen name="OpenGLPage" component={OpenGLPage} />
+
           <Stack.Screen
             name="MediaPage"
             component={MediaPage}
