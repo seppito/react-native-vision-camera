@@ -9,7 +9,8 @@ class CameraPackage : ReactPackage {
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> =
     listOf(
       CameraViewModule(reactContext),
-      CameraDevicesManager(reactContext)
+      CameraDevicesManager(reactContext),
+      GLNativeManager(reactContext)
     )
 
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> = listOf(CameraViewManager())
