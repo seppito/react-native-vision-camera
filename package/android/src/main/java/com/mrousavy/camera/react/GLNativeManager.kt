@@ -2,7 +2,8 @@
 package com.mrousavy.camera.react
 
 import android.opengl.GLES20
-import android.util.Log // Import Log for logging
+import android.util.Log
+import com.facebook.react.bridge.Promise // Import Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
@@ -25,35 +26,44 @@ class GLNativeManager(reactContext: ReactApplicationContext) : ReactContextBaseJ
     }
 
     @ReactMethod
-    fun createTestTexture() {
-        Log.d(TAG, "createTestTexture: Starting texture creation")
+    fun createTestTexture(promise: Promise) {
+        try {
+            Log.d(TAG, "createTestTexture: Starting texture creation")
 
-        val textures = IntArray(1)
-        GLES20.glGenTextures(1, textures, 0)
-        val textureId = textures[0]
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
-        Log.d(TAG, "createTestTexture: Generated texture with ID $textureId")
+            val textures = IntArray(1)
+            GLES20.glGenTextures(1, textures, 0)
+            val textureId = textures[0]
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
+            Log.d(TAG, "createTestTexture: Generated texture with ID $textureId")
 
-        // Set texture parameters
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
-        Log.d(TAG, "createTestTexture: Set texture parameters")
+            // Set texture parameters
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+            Log.d(TAG, "createTestTexture: Set texture parameters")
 
-        // Define a simple color for the texture (red in this case)
-        val colorData = ByteArray(4 * 1 * 1) { if (it % 4 == 0) 255.toByte() else 0.toByte() }  // RGBA: red
-        val colorBuffer = ByteBuffer.wrap(colorData)
-        Log.d(TAG, "createTestTexture: Prepared color data buffer")
+            // Define a simple color for the texture (red in this case)
+            val colorData = ByteArray(4 * 1 * 1) { if (it % 4 == 0) 255.toByte() else 0.toByte() }  // RGBA: red
+            val colorBuffer = ByteBuffer.wrap(colorData)
+            Log.d(TAG, "createTestTexture: Prepared color data buffer")
 
-        // Upload color data to the texture
-        GLES20.glTexImage2D(
-            GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA,
-            1, 1, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, colorBuffer
-        )
-        Log.d(TAG, "createTestTexture: Uploaded color data to texture")
+            // Upload color data to the texture
+            GLES20.glTexImage2D(
+                GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA,
+                1, 1, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, colorBuffer
+            )
+            Log.d(TAG, "createTestTexture: Uploaded color data to texture")
 
-        testTextureId = textureId
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0) // Unbind texture
-        Log.d(TAG, "createTestTexture: Texture creation complete and texture unbound")
+            testTextureId = textureId
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0) // Unbind texture
+            Log.d(TAG, "createTestTexture: Texture creation complete and texture unbound")
+
+            // Resolve the promise with the texture ID
+            promise.resolve(textureId)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "createTestTexture: Error creating texture", e)
+            promise.reject("TEXTURE_CREATION_FAILED", "Failed to create texture", e)
+        }
     }
 
     @ReactMethod

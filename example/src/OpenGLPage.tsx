@@ -22,6 +22,7 @@ export function OpenGLPage({ navigation }: Props): React.ReactElement {
     await GLNativeManager.createTestTexture();
 
     let textureId = await GLNativeManager.getTestTextureID();
+
     console.log("Test Texture ID:", textureId);
 
     try {
