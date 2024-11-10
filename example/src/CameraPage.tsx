@@ -27,7 +27,6 @@ import type { Routes } from './Routes'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useIsFocused } from '@react-navigation/core'
 import { usePreferredCameraDevice } from './hooks/usePreferredCameraDevice'
-import { examplePlugin } from './frame-processors/ExamplePlugin'
 import { exampleKotlinSwiftPlugin } from './frame-processors/ExampleKotlinSwiftPlugin'
 
 const ReanimatedCamera = Reanimated.createAnimatedComponent(Camera)
@@ -184,7 +183,6 @@ export function CameraPage({ navigation }: Props): React.ReactElement {
     runAtTargetFps(10, () => {
       'worklet'
       console.log(`${frame.timestamp}: ${frame.width}x${frame.height} ${frame.pixelFormat} Frame (${frame.orientation})`)
-      examplePlugin(frame)
       exampleKotlinSwiftPlugin(frame)
     })
   }, [])
@@ -223,6 +221,7 @@ export function CameraPage({ navigation }: Props): React.ReactElement {
                 exposure={0}
                 enableFpsGraph={true}
                 outputOrientation="device"
+                pixelFormat={"rgb"}
                 photo={true}
                 video={true}
                 audio={microphone.hasPermission}
