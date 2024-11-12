@@ -7,7 +7,7 @@ import IonIcon from 'react-native-vector-icons/Ionicons';
 import type { Routes } from './Routes';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-const { GLNativeManager } = NativeModules;
+const { GLNativeModule } = NativeModules;
 
 type Props = NativeStackScreenProps<Routes, 'OpenGLPage'>;
 
@@ -16,12 +16,12 @@ export function OpenGLPage({ navigation }: Props): React.ReactElement {
     console.log("GL Context ID:", gl.contextId);
 
     // Set the OpenGL context ID in the native module
-    GLNativeManager.setGLContextID(gl.contextId);
+    GLNativeModule.setGLContextID(gl.contextId);
 
     // Create a test texture on the native side
-    await GLNativeManager.createTestTexture();
+    await GLNativeModule.createTestTexture();
 
-    let textureId = await GLNativeManager.getTestTextureID();
+    let textureId = await GLNativeModule.getTestTextureID();
 
     console.log("Test Texture ID:", textureId);
 

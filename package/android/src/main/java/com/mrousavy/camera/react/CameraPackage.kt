@@ -10,7 +10,7 @@ class CameraPackage : ReactPackage {
     listOf(
       CameraViewModule(reactContext),
       CameraDevicesManager(reactContext),
-      GLNativeManager(reactContext)
+      GLNativeModule(reactContext)
     )
 
   override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> = listOf(CameraViewManager())
