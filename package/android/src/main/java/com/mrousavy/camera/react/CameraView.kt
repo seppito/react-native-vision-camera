@@ -118,11 +118,18 @@ class CameraView(context: Context) :
   private var currentConfigureCall: Long = System.currentTimeMillis()
   private val fpsSampleCollector = FpsSampleCollector(this)
 
+  // opengl manager to push frames to buffer.
+  internal val glManager: GLNativeManager
+
   init {
     clipToOutline = true
     cameraSession = CameraSession(context, this)
     this.installHierarchyFitter()
     updatePreview()
+    glManager = GLNativeManager.getInstance()
+    if(glManager!=null){
+      Log.i(TAG, "Instanciated glManager")
+    }
   }
 
   override fun onAttachedToWindow() {
@@ -310,7 +317,7 @@ class CameraView(context: Context) :
   override fun onFrame(frame: Frame) {
     // Update average FPS samples
     fpsSampleCollector.onTick()
-
+    frame.getImageProxy()
     // Call JS Frame Processor
     frameProcessor?.call(frame)
   }

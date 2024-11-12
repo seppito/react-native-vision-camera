@@ -29,7 +29,7 @@ export function App(): React.ReactElement | null {
             statusBarStyle: 'dark',
             animationTypeForReplace: 'push',
           }}
-          initialRouteName={showPermissionsPage ? 'PermissionsPage' : 'OpenGLPage'}>
+          initialRouteName={showPermissionsPage ? 'PermissionsPage' : 'CameraPage'}>
           <Stack.Screen name="PermissionsPage" component={PermissionsPage} />
           <Stack.Screen name="CameraPage" component={CameraPage} />
           <Stack.Screen name="CodeScannerPage" component={CodeScannerPage} />
