@@ -317,7 +317,16 @@ class CameraView(context: Context) :
   override fun onFrame(frame: Frame) {
     // Update average FPS samples
     fpsSampleCollector.onTick()
-    frame.getImageProxy()
+    if(glManager.getGLContextID() != null){
+      var id = glManager.pushFrame(frame.getImageProxy())
+      if (id == -1){
+        Log.i(TAG, "Failed to provide a valid id")
+      } else {
+        Log.i(TAG, "Frame Pushed to GLBuffer with id $id")
+      }
+    }else{
+      Log.i(TAG, "Context Not Ready")
+    }
     // Call JS Frame Processor
     frameProcessor?.call(frame)
   }

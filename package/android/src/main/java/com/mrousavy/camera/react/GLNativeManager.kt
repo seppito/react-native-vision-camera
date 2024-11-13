@@ -8,6 +8,8 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.util.LinkedList
+import android.graphics.PixelFormat
+
 
 class GLNativeManager private constructor() {
 
@@ -43,6 +45,11 @@ class GLNativeManager private constructor() {
         Log.d(TAG, "setGLContextID: glContextId set to $glContextId")
     }
 
+    // Get the GL context ID
+    fun getGLContextID(): Int? {
+        return glContextId
+    }
+
     // Push frame to GPU and add texture ID to stack
     fun pushFrame(imageProxy: ImageProxy): Int {
         if (glContextId == null) {
@@ -50,6 +57,11 @@ class GLNativeManager private constructor() {
         }
 
         val textureId = createTextureFromImageProxy(imageProxy)
+
+        if (textureId == -1) {
+            Log.e(TAG, "Failed to create texture from ImageProxy")
+            return -1
+        }
 
         // Handle frame stack limits
         if (frameStack.size >= MAX_FRAMES) {
@@ -62,11 +74,10 @@ class GLNativeManager private constructor() {
         frameIds.add(textureId)
 
         Log.d(TAG, "pushFrame: Pushed frame with texture ID $textureId")
-        imageProxy.close()
         return textureId
     }
 
-    // Create texture from ImageProxy using shaders for YUV to RGB conversion
+    // Create texture from ImageProxy supporting YUV and RGBA formats
     private fun createTextureFromImageProxy(imageProxy: ImageProxy): Int {
         if (debugMode) {
             // Debug mode: Simulate frame creation with a single-color texture
@@ -91,33 +102,67 @@ class GLNativeManager private constructor() {
             return textureId
         }
 
-        if (imageProxy.format != ImageFormat.YUV_420_888) {
-            Log.e(TAG, "Unsupported image format: ${imageProxy.format}")
-            return -1
+        when (imageProxy.format) {
+            ImageFormat.YUV_420_888 -> {
+                // Generate texture IDs for Y, U, and V planes
+                val textureIds = IntArray(3)
+                GLES20.glGenTextures(3, textureIds, 0)
+                val yTextureId = textureIds[0]
+                val uTextureId = textureIds[1]
+                val vTextureId = textureIds[2]
+
+                uploadPlaneToTexture(yTextureId, imageProxy.planes[0], GLES20.GL_LUMINANCE)
+                uploadPlaneToTexture(uTextureId, imageProxy.planes[1], GLES20.GL_LUMINANCE)
+                uploadPlaneToTexture(vTextureId, imageProxy.planes[2], GLES20.GL_LUMINANCE)
+
+                // Create a framebuffer object (FBO) to render the YUV data into an RGB texture
+                val rgbTextureId = renderYUVToRGBTexture(
+                    yTextureId, uTextureId, vTextureId,
+                    imageProxy.width, imageProxy.height
+                )
+
+                // Clean up YUV textures after rendering
+                GLES20.glDeleteTextures(3, textureIds, 0)
+
+                return rgbTextureId
+            }
+
+            ImageFormat.FLEX_RGBA_8888, PixelFormat.RGBA_8888 -> {
+                // Handle RGBA format
+                Log.d(TAG, "Processing RGBA format")
+                val textureIdArray = IntArray(1)
+                GLES20.glGenTextures(1, textureIdArray, 0)
+                val textureId = textureIdArray[0]
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
+
+                // Set texture parameters
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
+
+                val buffer = imageProxy.planes[0].buffer
+                buffer.position(0)
+
+                GLES20.glTexImage2D(
+                    GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA,
+                    imageProxy.width, imageProxy.height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buffer
+                )
+
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
+                Log.d(TAG, "Texture created from RGBA image data")
+                return textureId
+            }
+
+            else -> {
+                Log.e(TAG, "Unsupported image format: ${imageProxy.format}")
+                return -1
+            }
         }
-
-        // Generate texture IDs for Y, U, and V planes
-        val textureIds = IntArray(3)
-        GLES20.glGenTextures(3, textureIds, 0)
-        val yTextureId = textureIds[0]
-        val uTextureId = textureIds[1]
-        val vTextureId = textureIds[2]
-
-        uploadPlaneToTexture(yTextureId, imageProxy.planes[0])
-        uploadPlaneToTexture(uTextureId, imageProxy.planes[1])
-        uploadPlaneToTexture(vTextureId, imageProxy.planes[2])
-
-        // Create a framebuffer object (FBO) to render the YUV data into an RGB texture
-        val rgbTextureId = renderYUVToRGBTexture(yTextureId, uTextureId, vTextureId, imageProxy.width, imageProxy.height)
-
-        // Clean up YUV textures after rendering
-        GLES20.glDeleteTextures(3, textureIds, 0)
-
-        return rgbTextureId
     }
 
     // Upload plane data to texture
-    private fun uploadPlaneToTexture(textureId: Int, plane: ImageProxy.PlaneProxy) {
+    private fun uploadPlaneToTexture(textureId: Int, plane: ImageProxy.PlaneProxy, format: Int) {
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
@@ -127,20 +172,22 @@ class GLNativeManager private constructor() {
         val buffer = plane.buffer
         buffer.position(0)
 
-        // For Y plane, pixelStride is usually 1 and for U/V planes, it can be 2
         val width = plane.rowStride / plane.pixelStride
-        val height = plane.buffer.remaining() / plane.rowStride
+        val height = buffer.remaining() / plane.rowStride
 
         GLES20.glTexImage2D(
-            GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE,
-            width, height, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, buffer
+            GLES20.GL_TEXTURE_2D, 0, format,
+            width, height, 0, format, GLES20.GL_UNSIGNED_BYTE, buffer
         )
 
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0)
     }
 
     // Render YUV textures to an RGB texture using shaders
-    private fun renderYUVToRGBTexture(yTextureId: Int, uTextureId: Int, vTextureId: Int, width: Int, height: Int): Int {
+    private fun renderYUVToRGBTexture(
+        yTextureId: Int, uTextureId: Int, vTextureId: Int,
+        width: Int, height: Int
+    ): Int {
         // Generate RGB texture
         val rgbTextureIdArray = IntArray(1)
         GLES20.glGenTextures(1, rgbTextureIdArray, 0)
