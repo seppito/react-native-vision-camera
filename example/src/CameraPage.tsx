@@ -51,7 +51,7 @@ type Props = {
   gl: any;
 } & NativeStackScreenProps<Routes, 'CameraPage'>;
 
-export function CameraPage({ gl, navigation }: any): React.ReactElement {
+export function CameraPage({ navigation }: any): React.ReactElement {
   const camera = useRef<Camera>(null);
   const [isCameraInitialized, setIsCameraInitialized] = useState(false);
   const microphone = useMicrophonePermission();
@@ -162,14 +162,7 @@ export function CameraPage({ gl, navigation }: any): React.ReactElement {
     zoom.value = device?.neutralZoom ?? 1;
   }, [zoom, device]);
 
-  // Set the OpenGL context ID in the native module
-  useEffect(() => {
-    if (gl && gl.contextId) {
-      console.log('Setting GL Context ID in native module:', gl.contextId);
-      GLNativeModule.setGLContextID(gl.contextId);
-    }
-  }, [gl]);
-  //#endregion
+
 
   //#region Pinch to Zoom Gesture
   const onPinchGesture = useAnimatedGestureHandler<PinchGestureHandlerGestureEvent, { startZoom?: number }>({
@@ -201,8 +194,8 @@ export function CameraPage({ gl, navigation }: any): React.ReactElement {
 
     runAtTargetFps(10, () => {
       'worklet';
-      console.log(`${frame.timestamp}: ${frame.width}x${frame.height} ${frame.pixelFormat} Frame (${frame.orientation})`);
-      exampleKotlinSwiftPlugin(frame);
+      //console.log(`${frame.timestamp}: ${frame.width}x${frame.height} ${frame.pixelFormat} Frame (${frame.orientation})`);
+      //exampleKotlinSwiftPlugin(frame);
     });
   }, []);
 

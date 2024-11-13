@@ -18,11 +18,6 @@ class GLNativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJa
     }
 
     @ReactMethod
-    fun setGLContextID(contextID: Int) {
-        glManager.setGLContextID(contextID)
-    }
-
-    @ReactMethod
     fun pushFrame(imageProxy: ImageProxy, promise: Promise) {
         try {
             val textureId = glManager.pushFrame(imageProxy)
@@ -35,5 +30,25 @@ class GLNativeModule(reactContext: ReactApplicationContext) : ReactContextBaseJa
     @ReactMethod
     fun getFrameIDs(promise: Promise) {
         promise.resolve(glManager.getFrameIDs())
+    }
+
+    @ReactMethod
+    fun createTestTexture(promise: Promise) {
+        try {
+            val textureId = glManager.createTestTexture()
+            promise.resolve(textureId)
+        } catch (e: Exception) {
+            promise.reject("CREATE_TEST_TEXTURE_FAILED", "Failed to create test texture", e)
+        }
+    }
+
+    @ReactMethod
+    fun getTestTextureID(promise: Promise) {
+        val textureId = glManager.getTestTextureID()
+        if (textureId != null) {
+            promise.resolve(textureId)
+        } else {
+            promise.reject("NO_TEST_TEXTURE", "No test texture ID available")
+        }
     }
 }

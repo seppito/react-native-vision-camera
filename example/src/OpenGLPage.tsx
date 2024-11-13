@@ -14,7 +14,7 @@ type Props = NativeStackScreenProps<Routes, 'OpenGLPage'>;
 export function OpenGLPage({ navigation }: Props): React.ReactElement {
   async function onContextCreate(gl: any) {
     console.log("GL Context ID:", gl.contextId);
-
+    
     // Set the OpenGL context ID in the native module
     GLNativeModule.setGLContextID(gl.contextId);
 
@@ -27,7 +27,6 @@ export function OpenGLPage({ navigation }: Props): React.ReactElement {
 
     try {
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-      gl.clearColor(1, 0, 0, 1);  // Setting clear color to red for testing
 
       // Bind the texture ID
       const texture = gl.createTexture();
