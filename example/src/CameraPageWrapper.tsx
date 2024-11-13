@@ -82,16 +82,8 @@ export function CameraPageWrapper({ navigation }: Props): React.ReactElement {
         gl.clearColor(0, 0, 0, 1); // Setting clear color to black for testing
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        // Create the texture
-        const texture = gl.createTexture();
-
-        // Get the extension
-        const ext = gl.getExtension('EXPO_gl_native_bind_texture');
-        if (ext && ext.bindTexture) {
-            ext.bindTexture(gl.TEXTURE_2D, texture, textureId);
-        } else {
-            console.error('Failed to get EXPO_gl_native_bind_texture extension');
-        }
+        // Use the texture ID directly
+        const texture = textureId;
 
         // Use the program
         gl.useProgram(program);
