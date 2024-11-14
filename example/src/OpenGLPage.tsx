@@ -14,7 +14,13 @@ type Props = NativeStackScreenProps<Routes, 'OpenGLPage'>;
 export function OpenGLPage({ navigation }: Props): React.ReactElement {
   async function onContextCreate(gl: any) {
     console.log("GL Context ID:", gl.contextId);
-    
+
+    // Flush the screen with white color first
+    gl.clearColor(1.0, 1.0, 1.0, 1.0); // Set clear color to white (RGBA: 1, 1, 1, 1)
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.flush();
+    gl.endFrameEXP();
+
     // Set the OpenGL context ID in the native module
     GLNativeModule.setGLContextID(gl.contextId);
 
@@ -22,22 +28,23 @@ export function OpenGLPage({ navigation }: Props): React.ReactElement {
     await GLNativeModule.createTestTexture();
 
     let textureId = await GLNativeModule.getTestTextureID();
-
     console.log("Test Texture ID:", textureId);
 
     try {
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
 
-      // Bind the texture ID
-      const texture = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      // Activate texture unit 1 and bind the native texture ID
+      gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, textureId);
 
-      // Clear the buffer with the bound texture color
+      // Set texture parameters
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+      // Render operations (modify as needed based on your rendering logic)
       gl.clear(gl.COLOR_BUFFER_BIT);
 
+      // Ensure all drawing commands are flushed and rendered
       gl.flush();
       gl.endFrameEXP();
     } catch (error) {
